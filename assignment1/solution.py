@@ -33,7 +33,8 @@ class NN(object):
                  batch_size=64,
                  seed=None,
                  activation="relu",
-                 data=None
+                 data=None,
+                 init_method="glorot"
                  ):
 
         self.hidden_dims = hidden_dims
@@ -58,81 +59,96 @@ class NN(object):
             self.train, self.valid, self.test = data
 
 
-    def initialize_weights(self, dims):        
+    def initialize_weights(self, dims):
         if self.seed is not None:
             np.random.seed(self.seed)
 
         self.weights = {}
-        # self.weights is a dictionnary with keys W1, b1, W2, b2, ..., Wm, Bm where m - 1 is the number of hidden layers
+        # self.weights is a dictionary with keys W1, b1, W2, b2, ..., Wm, Bm where m - 1 is the number of hidden layers
         all_dims = [dims[0]] + list(self.hidden_dims) + [dims[1]]
         for layer_n in range(1, self.n_hidden + 2):
-            # WRITE CODE HERE
+            temp = np.ones((all_dims[layer_n - 1], all_dims[layer_n])) * (-np.sqrt(6) / np.sqrt(all_dims[layer_n - 1]+all_dims[layer_n]))
+            self.weights[f"W{layer_n}"] = temp + (np.random.rand(all_dims[layer_n - 1], all_dims[layer_n]) * (2*np.sqrt(6) / np.sqrt(all_dims[layer_n - 1]+all_dims[layer_n])))
             self.weights[f"b{layer_n}"] = np.zeros((1, all_dims[layer_n]))
 
     def relu(self, x, grad=False):
         if grad:
-            # WRITE CODE HERE
-            pass
-        # WRITE CODE HERE
-        pass
-        return 0
+            return 1 * (x > 0)
+        return x * (x > 0)
 
     def sigmoid(self, x, grad=False):
+        temp = np.where(x >= 0, 1 / (1 + np.exp(-x)), np.exp(x) / (1 + np.exp(x)))
         if grad:
-            # WRITE CODE HERE
-            pass
-        # WRITE CODE HERE
-        pass
-        return 0
+            return temp * (1 - temp)
+        else:
+            return temp
 
     def tanh(self, x, grad=False):
+        temp_1 = np.exp(x)
+        temp_2 = np.exp(-x)
+        temp_3 = (temp_1 - temp_2) / (temp_1 + temp_2)
         if grad:
-            # WRITE CODE HERE
-            pass
-        # WRITE CODE HERE
-        pass
-        return 0
+            return 1 - temp_3 ** 2
+        return temp_3
 
     def activation(self, x, grad=False):
         if self.activation_str == "relu":
-            # WRITE CODE HERE
-            pass
+            return self.relu(x, grad=grad)
         elif self.activation_str == "sigmoid":
-            # WRITE CODE HERE
-            pass
+            return self.sigmoid(x, grad=grad)
         elif self.activation_str == "tanh":
-            # WRITE CODE HERE
-            pass
+            return self.tanh(x, grad=grad)
         else:
             raise Exception("invalid")
         return 0
 
     def softmax(self, x):
         # Remember that softmax(x-C) = softmax(x) when C is a constant.
-        # WRITE CODE HERE
-        pass
-        return 0
+        if x.ndim == 1:
+            max_val = np.max(x)
+            x = x - max_val
+            e_x = np.exp(x)
+            output = e_x / np.sum(e_x)
+            return output
+        # Remove the max for stability (invariant to this)
+        max_val = np.max(x, axis=1)
+        x = x - max_val[:, np.newaxis]
+        e_x = np.exp(x)
+        output = e_x / np.sum(e_x, axis=1)[:, np.newaxis]
+        return output
 
     def forward(self, x):
         cache = {"Z0": x}
         # cache is a dictionnary with keys Z0, A0, ..., Zm, Am where m - 1 is the number of hidden layers
         # Ai corresponds to the preactivation at layer i, Zi corresponds to the activation at layer i
-        # WRITE CODE HERE
-        pass
+        for layer_n in range(1, self.n_hidden+2):
+            cache[f"A{layer_n}"] = self.weights[f"b{layer_n}"] + np.matmul(cache[f"Z{layer_n-1}"], self.weights[f"W{layer_n}"])
+            if layer_n == self.n_hidden+1:
+                cache[f"Z{layer_n}"] = self.softmax(cache[f"A{layer_n}"])
+            else:
+                cache[f"Z{layer_n}"] = self.activation(cache[f"A{layer_n}"])
         return cache
 
     def backward(self, cache, labels):
         output = cache[f"Z{self.n_hidden + 1}"]
         grads = {}
         # grads is a dictionnary with keys dAm, dWm, dbm, dZ(m-1), dA(m-1), ..., dW1, db1
-        # WRITE CODE HERE
-        pass
+        grads[f"dA{self.n_hidden + 1}"] = output - labels
+        for layer_n in range(self.n_hidden + 1, 0, -1):
+            grads[f"dW{layer_n}"] = np.matmul(cache[f"Z{layer_n - 1}"].T, grads[f"dA{layer_n}"]) / \
+                                    cache[f"Z{layer_n - 1}"].shape[0]
+            grads[f"db{layer_n}"] = np.sum(grads[f"dA{layer_n}"], axis=0, keepdims=True) / grads[f"dA{layer_n}"].shape[
+                0]
+            if layer_n > 1:
+                grads[f"dZ{layer_n - 1}"] = np.matmul(self.weights[f"W{layer_n}"], grads[f"dA{layer_n}"].T).T
+                grads[f"dA{layer_n - 1}"] = grads[f"dZ{layer_n - 1}"] * self.activation(cache[f"A{layer_n - 1}"],
+                                                                                        grad=True)
         return grads
 
     def update(self, grads):
         for layer in range(1, self.n_hidden + 2):
-            # WRITE CODE HERE
-            pass
+            self.weights[f"W{layer}"] -= self.lr * grads[f"dW{layer}"]
+            self.weights[f"b{layer}"] -= self.lr * grads[f"db{layer}"]
 
     # def one_hot(self, y, n_classes=None):
     #     n_classes = n_classes or self.n_classes
@@ -141,9 +157,9 @@ class NN(object):
     def loss(self, prediction, labels):
         prediction[np.where(prediction < self.epsilon)] = self.epsilon
         prediction[np.where(prediction > 1 - self.epsilon)] = 1 - self.epsilon
-        # WRITE CODE HERE
-        pass
-        return 0
+        entropy_vals = -(labels * np.log(prediction))
+        loss = np.sum(entropy_vals) / labels.shape[0]
+        return loss
 
     def compute_loss_and_accuracy(self, X, y):
         one_y = y
@@ -166,8 +182,9 @@ class NN(object):
             for batch in range(n_batches):
                 minibatchX = X_train[self.batch_size * batch:self.batch_size * (batch + 1), :]
                 minibatchY = y_onehot[self.batch_size * batch:self.batch_size * (batch + 1), :]
-                # WRITE CODE HERE
-                pass
+                cache = self.forward(minibatchX)
+                grads = self.backward(cache, minibatchY)
+                self.update(grads)
 
             X_train, y_train = self.train
             train_loss, train_accuracy, _ = self.compute_loss_and_accuracy(X_train, y_train)
