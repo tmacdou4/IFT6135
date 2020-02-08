@@ -1,4 +1,4 @@
-from solution import *
+from solution_IFT6390 import *
 import numpy as np
 
 #driver to test solution.py
