@@ -38,3 +38,26 @@ train, valid, test = load_mnist()
 # logs = net.train_loop(10)
 #
 # print(logs['validation_accuracy'][9])
+
+# #Testing the finite diff
+# net = prob2NN(hidden_dims=(700, 300), epsilon=1e-6, lr=2.5e-2, batch_size=64,
+#           seed=3491554, activation="relu", data=(train, valid, test), init_method='glorot')
+#
+# X_train, y_train = net.train
+# y_onehot = y_train
+# dims = [X_train.shape[1], y_onehot.shape[1]]
+# net.initialize_weights(dims)
+#
+# print(net.finite_difference(1000))
+
+net = prob2NN(hidden_dims=(700, 300), epsilon=1e-6, lr=2.5e-2, batch_size=64,
+           seed=3491554, activation="relu", data=(train, valid, test), init_method='glorot')
+
+net.train_loop(10)
+
+vals = []
+
+for n in [1,10,50,100,500,1000,10000]:
+    vals.append(net.finite_difference(n))
+
+print(vals)

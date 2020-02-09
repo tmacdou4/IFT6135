@@ -36,21 +36,32 @@ class prob2NN(NN):
     def finite_difference(self, N):
         eps = 1/N
 
-        layer = f"W{2}"
+        layer = 2
 
         ex_x = self.train[0][0]
         ex_y = self.train[1][0]
 
-        p = min(10, len(self.weights[layer]))
+        ex_x = ex_x[np.newaxis,:]
+        ex_y = ex_y[np.newaxis,:]
+
+        if len(self.weights[f"W{layer}"][0]) >= 10:
+            p = 10
+        else:
+            p = len(self.weights[f"W{layer}"][0])
+
+        # print(self.weights[f"W{layer}"][0][3])
+        # self.weights[f"W{layer}"][0][3] = self.weights[f"W{layer}"][0][3] + 1
+        # print(self.weights[f"W{layer}"][0][3])
+
         max_diff = 0
 
         for i in range(p):
 
-            self.weights[layer][i] = self.weights[layer][i] - eps
+            self.weights[f"W{layer}"][0][i] = self.weights[f"W{layer}"][0][i] - eps
             for_1 = self.forward(ex_x)
 
             #add 2 because just subtracted 1 above
-            self.weights[layer][i] = self.weights[layer][i] + 2*eps
+            self.weights[f"W{layer}"][0][i] = self.weights[f"W{layer}"][0][i] + 2*eps
             for_2 = self.forward(ex_x)
 
             loss_1 = self.loss(for_1[f"Z{self.n_hidden + 1}"], ex_y)
@@ -59,12 +70,13 @@ class prob2NN(NN):
             grad_pred = (loss_2-loss_1)/(2*eps)
 
             #reset the weights to what they originally were
-            self.weights[layer][i] = self.weights[layer][i] - eps
+            self.weights[f"W{layer}"][0][i] = self.weights[f"W{layer}"][0][i] - eps
             for_3 = self.forward(ex_x)
             grad_real_dict = self.backward(for_3, ex_y)
-            grad_real = grad_real_dict[f"dW{2}"]
+            grad_real = grad_real_dict[f"dW{layer}"][0][i]
 
-            diff = np.max(grad_pred - grad_real[i])
+
+            diff = grad_pred - grad_real
 
             if np.abs(diff) > np.abs(max_diff):
                 max_diff = diff
