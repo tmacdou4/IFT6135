@@ -31,13 +31,24 @@ train, valid, test = load_mnist()
 #     print(logs['train_loss'])
 
 
-#These hyperparameters give a 10th epoch validation accuracy of 0.9715
-# net = NN(hidden_dims=(700, 300), epsilon=1e-6, lr=2.5e-2, batch_size=64,
+# These hyperparameters give a 10th epoch validation accuracy of 0.9723
+# net = NN(hidden_dims=(700, 200), epsilon=1e-6, lr=2.5e-2, batch_size=64,
 #          seed=3491554, activation="relu", data=(train, valid, test), init_method='glorot')
 #
 # logs = net.train_loop(10)
 #
 # print(logs['validation_accuracy'][9])
+
+# # Actual H-Param search to populate a table
+# for h1 in [600,700]:
+#     for h2 in [200,300]:
+#         for learn in [1e-2, 2.5e-2]:
+#             net = NN(hidden_dims=(h1, h2), epsilon=1e-6, lr=learn, batch_size=64,
+#                      seed=3491554, activation="relu", data=(train, valid, test), init_method='glorot')
+#
+#             logs = net.train_loop(10)
+#
+#             print("h1:", h1, ", h2:", h2, ", learning rate:", learn, ", 10th epoch validation acc:", logs['validation_accuracy'][9])
 
 # #Testing the finite diff
 # net = prob2NN(hidden_dims=(700, 300), epsilon=1e-6, lr=2.5e-2, batch_size=64,
@@ -50,14 +61,24 @@ train, valid, test = load_mnist()
 #
 # print(net.finite_difference(1000))
 
-net = prob2NN(hidden_dims=(700, 300), epsilon=1e-6, lr=2.5e-2, batch_size=64,
-           seed=3491554, activation="relu", data=(train, valid, test), init_method='glorot')
+# #Finite diff for the report question (already trained)
+# net = prob2NN(hidden_dims=(700, 300), epsilon=1e-6, lr=2.5e-2, batch_size=64,
+#            seed=3491554, activation="relu", data=(train, valid, test), init_method='glorot')
+#
+# net.train_loop(10)
+#
+# vals = []
+#
+# for n in [1,10,50,100,500,1000,10000]:
+#     vals.append(net.finite_difference(n))
+#
+# print(vals)
 
-net.train_loop(10)
+#Make loss curves for comparison with CNN
+net = NN(hidden_dims=(700, 200), epsilon=1e-6, lr=2.5e-2, batch_size=64,
+          seed=3491554, activation="relu", data=(train, valid, test), init_method='glorot')
 
-vals = []
+logs = net.train_loop(10)
 
-for n in [1,10,50,100,500,1000,10000]:
-    vals.append(net.finite_difference(n))
-
-print(vals)
+print(logs['train_loss'])
+print(logs['validation_loss'])
