@@ -111,8 +111,8 @@ def train(model, criterion, optimizer, num_epochs):
         print(" [ACC] TRAIN {} / TEST {}".format(
             train_acc, valid_acc))
 
-    return learning_curve_acc_valid[num_epochs-1], learning_curve_nll_valid[num_epochs-1]
-
+    #return learning_curve_acc_valid[num_epochs-1], learning_curve_nll_valid[num_epochs-1]
+    return learning_curve_acc_valid, learning_curve_nll_valid
 
 def build_model(d):
     model = nn.Sequential(
@@ -127,6 +127,7 @@ def build_model(d):
         nn.ReLU(),
         Flatten(),
         nn.Linear(225, 100),
+        nn.ReLU(),
         nn.Linear(100, 10)
     )
 
@@ -141,11 +142,13 @@ def build_model(d):
 
 final_valid_accs = []
 final_valid_losses = []
-for d in [0,0.05,0.1,0.2,0.3,0.4,0.5,0.6]:
+for d in [0]:
     model, criterion, optimizer = build_model(d)
     acc, loss = train(model, criterion, optimizer, 10)
-    final_valid_accs.append(acc)
-    final_valid_losses.append(loss)
+    #final_valid_accs.append(acc)
+    #final_valid_losses.append(loss)
+    print(acc)
+    print(loss)
 
 print(final_valid_accs)
 print(final_valid_losses)
