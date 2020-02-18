@@ -79,6 +79,11 @@ np = numpy
 from solution import RNN, GRU
 from solution import make_model as TRANSFORMER
 
+
+
+# ADDED BY TOM FOR DEBUG
+torch.autograd.set_detect_anomaly(True)
+
 ##############################################################################
 #
 # ARG PARSING AND EXPERIMENT SETUP

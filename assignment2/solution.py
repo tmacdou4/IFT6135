@@ -184,6 +184,7 @@ class RNN(nn.Module):
                         shape: (generated_seq_len, batch_size)
         """
         # TODO ========================
+        samples = None
         return samples
 
 
@@ -218,22 +219,28 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
         self.batch_size = batch_size
         # TODO ========================
 
-        self.word_embeddings =
+        self.word_embeddings = nn.Embedding(self.vocab_size, self.emb_size)
 
         # Create "reset gate" layers
-        self.r =
+        self.r = nn.ModuleList()
+        self.r.append(nn.Linear((emb_size + hidden_size), hidden_size))
+        self.r.extend(clones(nn.Linear(2*hidden_size, hidden_size), num_layers-1))
 
         # Create "forget gate" layers
-        self.z =
+        self.z = nn.ModuleList()
+        self.z.append(nn.Linear((emb_size + hidden_size), hidden_size))
+        self.z.extend(clones(nn.Linear(2 * hidden_size, hidden_size), num_layers - 1))
 
         # Create the "memory content" layers
-        self.h =
+        self.h = nn.ModuleList()
+        self.h.append(nn.Linear((emb_size + hidden_size), hidden_size))
+        self.h.extend(clones(nn.Linear(2 * hidden_size, hidden_size), num_layers - 1))
 
         # Dropout
-        self.dropout = 
+        self.dropout = nn.Dropout(1 - self.dp_keep_prob)
 
         # The output layer
-        self.out_layer =
+        self.out_layer = nn.Linear(hidden_size, vocab_size)
 
         self.init_embedding_weights_uniform()
         self.init_reset_gate_weights_uniform()
@@ -243,18 +250,34 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
 
     def init_embedding_weights_uniform(self, init_range=0.1):
         # TODO ========================
+        nn.init.uniform_(self.word_embeddings.weight, -init_range, init_range)
 
     def init_reset_gate_weights_uniform(self):
         # TODO ========================
+        for i in range(self.num_layers):
+            b = 1 / math.sqrt(self.hidden_size)
+            nn.init.uniform_(self.r[i].weight, -b, b)
+            nn.init.uniform_(self.r[i].bias, -b, b)
+
 
     def init_forget_gate_weights_uniform(self):
         # TODO ========================
+        for i in range(self.num_layers):
+            b = 1 / math.sqrt(self.hidden_size)
+            nn.init.uniform_(self.z[i].weight, -b, b)
+            nn.init.uniform_(self.z[i].bias, -b, b)
 
     def init_memory_weights_uniform(self):
         # TODO ========================
+        for i in range(self.num_layers):
+            b = 1 / math.sqrt(self.hidden_size)
+            nn.init.uniform_(self.h[i].weight, -b, b)
+            nn.init.uniform_(self.h[i].bias, -b, b)
 
     def init_out_layer_weights_uniform(self):
         # TODO ========================
+        nn.init.uniform_(self.out_layer.weight, -0.1, 0.1)
+        nn.init.zeros_(self.out_layer.bias)
 
     def init_hidden(self):
         """
@@ -263,6 +286,7 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
         filled with zeros as the initial hidden states of the GRU.
         """
         # TODO ========================
+        initial_hidden = torch.zeros(self.num_layers, self.batch_size, self.hidden_size)
         return initial_hidden
 
     def forward(self, inputs, hidden):
@@ -296,6 +320,41 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
                         shape: (num_layers, batch_size, hidden_size)
         """
         # TODO ========================
+        if inputs.is_cuda:
+            device = inputs.get_device()
+        else:
+            device = torch.device("cpu")
+
+        # Apply the Embedding layer on the input
+        embed_out = self.word_embeddings(inputs)# shape (seq_len,batch_size,emb_size)
+
+        logits = torch.zeros(self.seq_len, self.batch_size, self.vocab_size).to(device)
+
+        for timestep in range(self.seq_len):
+
+            input_ = self.dropout(embed_out[timestep])
+
+            for layer in range(self.num_layers):
+
+                r_t = torch.relu(self.r[layer](torch.cat([input_, hidden[layer]], 1)))
+
+                z_t = torch.relu(self.r[layer](torch.cat([input_, hidden[layer]], 1)))
+
+                temp1 = (r_t*hidden[layer].clone())
+
+                h_t = torch.tanh(self.h[layer](torch.cat([input_, temp1], 1)))
+
+                temp2 = 1-z_t
+
+                temp3 = temp2*hidden[layer].clone()
+
+                hidden[layer] = temp3 + z_t*h_t
+
+                input_ = self.dropout(hidden[layer])
+
+            logits[timestep] = self.out_layer(input_)
+
+
         return logits, hidden
 
     def generate(self, input, hidden, generated_seq_len):
@@ -320,6 +379,7 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
                         shape: (generated_seq_len, batch_size)
         """
         # TODO ========================
+        samples = None
         return samples
 
 
@@ -410,8 +470,8 @@ class MultiHeadedAttention(nn.Module):
         # Note: the only Pytorch modules you are allowed to use are nn.Linear
         # and nn.Dropout. You can also use softmax, masked fill and the "clones"
         # function we provide.
-        self.linears =
-        self.dropout =
+        self.linears = None
+        self.dropout = None
 
     def attention(self, query, key, value, mask=None, dropout=None):
         # Implement scaled dot product attention
@@ -424,13 +484,13 @@ class MultiHeadedAttention(nn.Module):
         # B is the batch size, T is the sequence length, d_value is the size
         # of the key.value features
         # TODO ========================
-        scores =
+        scores = None
         if mask is not None:
             scores = scores.masked_fill()
-        norm_scores =
+        norm_scores = None
         if dropout is not None:
-            norm_scores =  # Tensor of shape B x T x T
-        output = # Tensor of shape B x T x d_value
+            norm_scores = None# Tensor of shape B x T x T
+        output = None# Tensor of shape B x T x d_value
 
         return output, norm_scores
 
@@ -444,7 +504,7 @@ class MultiHeadedAttention(nn.Module):
         # generating the "attention values" (i.e. A_i in the .tex)
         # Also apply dropout to the attention values.
         # TODO ========================
-
+        pass
         return # size: (batch_size, seq_len, self.n_units)
 
 
