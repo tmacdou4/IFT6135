@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math, copy, time
 from torch.autograd import Variable
-import matplotlib.pyplot as plt
+
 
 # NOTE ==============================================
 #
@@ -184,7 +184,28 @@ class RNN(nn.Module):
                         shape: (generated_seq_len, batch_size)
         """
         # TODO ========================
-        samples = None
+
+        if inputs.is_cuda:
+            device = inputs.get_device()
+        else:
+            device = torch.device("cpu")
+
+        samples = torch.zeros(generated_seq_len, self.batch_size).to(device)
+
+        for timestep in range(generated_seq_len):
+
+            embed_out = self.embeddings(inputs)
+
+            input_ = samples[timestep]
+
+            for layer in range(self.num_layers):
+
+                hidden[layer] = torch.tanh(self.layers[layer](torch.cat([input_, hidden[layer]], 1)))
+
+                input_ = self.dropout(hidden[layer])
+
+            samples[timestep] = self.out_layer(input_)
+
         return samples
 
 
@@ -224,7 +245,7 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
         # Create "reset gate" layers
         self.r = nn.ModuleList()
         self.r.append(nn.Linear((emb_size + hidden_size), hidden_size))
-        self.r.extend(clones(nn.Linear(2*hidden_size, hidden_size), num_layers-1))
+        self.r.extend(clones(nn.Linear(2 * hidden_size, hidden_size), num_layers - 1))
 
         # Create "forget gate" layers
         self.z = nn.ModuleList()
@@ -258,7 +279,6 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
             b = 1 / math.sqrt(self.hidden_size)
             nn.init.uniform_(self.r[i].weight, -b, b)
             nn.init.uniform_(self.r[i].bias, -b, b)
-
 
     def init_forget_gate_weights_uniform(self):
         # TODO ========================
@@ -325,8 +345,7 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
         else:
             device = torch.device("cpu")
 
-        # Apply the Embedding layer on the input
-        embed_out = self.word_embeddings(inputs)# shape (seq_len,batch_size,emb_size)
+        embed_out = self.word_embeddings(inputs)
 
         logits = torch.zeros(self.seq_len, self.batch_size, self.vocab_size).to(device)
 
@@ -336,24 +355,17 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
 
             for layer in range(self.num_layers):
 
-                r_t = torch.relu(self.r[layer](torch.cat([input_, hidden[layer]], 1)))
+                r_t = torch.sigmoid(self.r[layer](torch.cat([input_, hidden[layer]], 1)))
 
-                z_t = torch.relu(self.r[layer](torch.cat([input_, hidden[layer]], 1)))
+                z_t = torch.sigmoid(self.z[layer](torch.cat([input_, hidden[layer]], 1)))
 
-                temp1 = (r_t*hidden[layer].clone())
+                h_t = torch.tanh(self.h[layer](torch.cat([input_, r_t*hidden[layer].clone()], 1)))
 
-                h_t = torch.tanh(self.h[layer](torch.cat([input_, temp1], 1)))
-
-                temp2 = 1-z_t
-
-                temp3 = temp2*hidden[layer].clone()
-
-                hidden[layer] = temp3 + z_t*h_t
+                hidden[layer] = (torch.ones_like(z_t)-z_t)*hidden[layer].clone() + z_t*h_t
 
                 input_ = self.dropout(hidden[layer])
 
             logits[timestep] = self.out_layer(input_)
-
 
         return logits, hidden
 
@@ -379,7 +391,6 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
                         shape: (generated_seq_len, batch_size)
         """
         # TODO ========================
-        samples = None
         return samples
 
 
@@ -460,37 +471,50 @@ class MultiHeadedAttention(nn.Module):
         self.n_units = n_units
         self.n_heads = n_heads
         # TODO ========================
-        # Create the layers below. self.linear should contain n_head linear
+        # Create the layers below. self.linears should contain 3 linear
         # layers that compute the projection from n_units => n_heads x d_k
+        # (one for each of query, key and value) plus an additional final layer
+        # (4 in total)
 
         # Note: that parameters are initialized with Glorot initialization in
         # the make_model function below (so you don't need to implement this
         # yourself).
 
         # Note: the only Pytorch modules you are allowed to use are nn.Linear
-        # and nn.Dropout. You can also use softmax, masked fill and the "clones"
+        # and nn.Dropout. You can also use softmax, masked_fill and the "clones"
         # function we provide.
         self.linears = None
         self.dropout = None
 
     def attention(self, query, key, value, mask=None, dropout=None):
         # Implement scaled dot product attention
+        # The query, key, and value inputs will be of size
+        # batch_size x n_heads x seq_len x d_k
+        # (If making a single call to attention in your forward method)
+        # and mask (if not None) will be of size
+        # batch_size x 1 x seq_len x seq_len
+
+        # As described in the .tex, apply input masking to the softmax
+        # generating the "attention values" (i.e. A_i in the .tex)
+
+        # Also apply dropout to the attention values.
         # This method needs to compare query and keys first, then mask positions
         # if a mask is provided, normalize the scores, apply dropout and then
         # retrieve values, in this particular order.
-        # When initializing the mask, use values 1e-9 for the masked positions.
+        # When applying the mask, use values -1e9 for the masked positions.
         # The method returns the result of the attention operation as well as
         # the normalized scores after dropout.
-        # B is the batch size, T is the sequence length, d_value is the size
-        # of the key.value features
+
         # TODO ========================
         scores = None
         if mask is not None:
+            if len(mask.size()) == 3 and len(query.size()) == 4:
+                mask.unsqueeze(1)
             scores = scores.masked_fill()
         norm_scores = None
         if dropout is not None:
-            norm_scores = None# Tensor of shape B x T x T
-        output = None# Tensor of shape B x T x d_value
+            norm_scores =  None# Tensor of shape batch_size x n_heads x seq_len x seq_len
+        output = None# Tensor of shape batch_size x n_heads x seq_len x d_k
 
         return output, norm_scores
 
@@ -500,11 +524,20 @@ class MultiHeadedAttention(nn.Module):
         # query, key, and value correspond to Q, K, and V in the latex, and
         # they all have size: (batch_size, seq_len, self.n_units)
         # mask has size: (batch_size, seq_len, seq_len)
-        # As described in the .tex, apply input masking to the softmax
-        # generating the "attention values" (i.e. A_i in the .tex)
-        # Also apply dropout to the attention values.
+        # This method should call the attention method above
+        if mask is not None:
+            # Same mask applied to all n_heads heads.
+            mask = mask.unsqueeze(1)
         # TODO ========================
-        pass
+        # 1) Do all the linear projections in batch from n_units => n_heads x d_k
+
+        # 2) Apply attention on all the projected vectors in batch.
+        # The query, key, value inputs to the attention method will be of size
+        # batch_size x n_heads x seq_len x d_k
+
+        # 3) "Concat" using a view and apply a final linear.
+
+
         return # size: (batch_size, seq_len, self.n_units)
 
 
@@ -543,8 +576,7 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-        x = x + Variable(self.pe[:, :x.size(1)],
-                         requires_grad=False)
+        x = x + Variable(self.pe[:, :x.size(1)], requires_grad=False)
         return self.dropout(x)
 
 
@@ -633,8 +665,7 @@ class Batch:
     def make_mask(data, pad):
         "Create a mask to hide future words."
         mask = (data != pad).unsqueeze(-2)
-        mask = mask & Variable(
-            subsequent_mask(data.size(-1)).type_as(mask.data))
+        mask = mask & Variable(subsequent_mask(data.size(-1)).type_as(mask.data))
         return mask
 
 
