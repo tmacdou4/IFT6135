@@ -67,7 +67,7 @@ class RNN(nn.Module):
         self.vocab_size = vocab_size
         self.dp_keep_prob = dp_keep_prob
         self.num_layers = num_layers
-        self.embeddings = nn.Embedding(self.vocab_size,self.emb_size)
+        self.embeddings = nn.Embedding(self.vocab_size, self.emb_size)
 
         # Create layers
         self.layers = nn.ModuleList()
@@ -190,13 +190,14 @@ class RNN(nn.Module):
         else:
             device = torch.device("cpu")
 
-        samples = torch.zeros(generated_seq_len, self.batch_size).to(device)
+        inputs.view(1, self.batch_size)
+
+        # Generated Sequences
+        samples = torch.zeros(generated_seq_len, self.batch_size, dtype=torch.int64).to(device)
 
         for timestep in range(generated_seq_len):
 
-            embed_out = self.embeddings(inputs)
-
-            input_ = samples[timestep]
+            input_ = self.embeddings(inputs)
 
             for layer in range(self.num_layers):
 
@@ -204,7 +205,9 @@ class RNN(nn.Module):
 
                 input_ = self.dropout(hidden[layer])
 
-            samples[timestep] = self.out_layer(input_)
+            samples[timestep] = torch.softmax(self.out_layer(input_), 1).argmax(dim=-1)
+
+            inputs = samples[timestep]
 
         return samples
 
@@ -369,7 +372,7 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
 
         return logits, hidden
 
-    def generate(self, input, hidden, generated_seq_len):
+    def generate(self, inputs, hidden, generated_seq_len):
         """
         Generate a sample sequence from the GRU.
 
@@ -391,6 +394,36 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
                         shape: (generated_seq_len, batch_size)
         """
         # TODO ========================
+        if inputs.is_cuda:
+            device = inputs.get_device()
+        else:
+            device = torch.device("cpu")
+
+        inputs.view(1, self.batch_size)
+
+        #Generated Sequences
+        samples = torch.zeros(generated_seq_len, self.batch_size, dtype=torch.int64).to(device)
+
+        for timestep in range(generated_seq_len):
+
+            input_ = self.word_embeddings(inputs)
+
+            for layer in range(self.num_layers):
+
+                r_t = torch.sigmoid(self.r[layer](torch.cat([input_, hidden[layer]], 1)))
+
+                z_t = torch.sigmoid(self.z[layer](torch.cat([input_, hidden[layer]], 1)))
+
+                h_t = torch.tanh(self.h[layer](torch.cat([input_, r_t * hidden[layer].clone()], 1)))
+
+                hidden[layer] = (torch.ones_like(z_t) - z_t) * hidden[layer].clone() + z_t * h_t
+
+                input_ = self.dropout(hidden[layer])
+
+            samples[timestep] = torch.softmax(self.out_layer(input_), 1).argmax(dim=-1)
+
+            inputs = samples[timestep]
+
         return samples
 
 
@@ -483,8 +516,10 @@ class MultiHeadedAttention(nn.Module):
         # Note: the only Pytorch modules you are allowed to use are nn.Linear
         # and nn.Dropout. You can also use softmax, masked_fill and the "clones"
         # function we provide.
-        self.linears = None
-        self.dropout = None
+
+        self.linears = clones(nn.Linear(n_units, n_units), 4)
+
+        self.dropout = nn.Dropout(dropout)
 
     def attention(self, query, key, value, mask=None, dropout=None):
         # Implement scaled dot product attention
@@ -506,15 +541,15 @@ class MultiHeadedAttention(nn.Module):
         # the normalized scores after dropout.
 
         # TODO ========================
-        scores = None
+        scores = torch.matmul(query, key.transpose(2, 3))/np.sqrt(self.d_k)
         if mask is not None:
             if len(mask.size()) == 3 and len(query.size()) == 4:
                 mask.unsqueeze(1)
-            scores = scores.masked_fill()
-        norm_scores = None
+            scores = scores.masked_fill(mask == 0, -1e9)
+        norm_scores = torch.softmax(scores, dim=3)
         if dropout is not None:
-            norm_scores =  None# Tensor of shape batch_size x n_heads x seq_len x seq_len
-        output = None# Tensor of shape batch_size x n_heads x seq_len x d_k
+            norm_scores = self.dropout(norm_scores)# Tensor of shape batch_size x n_heads x seq_len x seq_len
+        output = torch.matmul(norm_scores, value)# Tensor of shape batch_size x n_heads x seq_len x d_k
 
         return output, norm_scores
 
@@ -531,20 +566,27 @@ class MultiHeadedAttention(nn.Module):
         # TODO ========================
         # 1) Do all the linear projections in batch from n_units => n_heads x d_k
 
+        batch_size = query.size(0)
+        seq_len = query.size(1)
+
+        # query = self.linears[0](query).view(batch_size, self.n_heads, seq_len, self.d_k)
+        # key = self.linears[1](key).view(batch_size, self.n_heads, seq_len, self.d_k)
+        # value = self.linears[2](value).view(batch_size, self.n_heads, seq_len, self.d_k)
+
+        query = self.linears[0](query).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1,2)
+        key = self.linears[1](key).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1,2)
+        value = self.linears[2](value).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1,2)
+
         # 2) Apply attention on all the projected vectors in batch.
         # The query, key, value inputs to the attention method will be of size
         # batch_size x n_heads x seq_len x d_k
+        output, _ = self.attention(query, key, value, mask=mask, dropout=self.dropout)
 
         # 3) "Concat" using a view and apply a final linear.
 
+        output = output.transpose(1,2).contiguous().view(batch_size, seq_len, self.n_units)
 
-        return # size: (batch_size, seq_len, self.n_units)
-
-
-
-
-
-
+        return self.linears[3](output)# size: (batch_size, seq_len, self.n_units)
 
 #----------------------------------------------------------------------------------
 # The encodings of elements of the input sequence
