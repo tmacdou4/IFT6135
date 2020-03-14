@@ -569,10 +569,6 @@ class MultiHeadedAttention(nn.Module):
         batch_size = query.size(0)
         seq_len = query.size(1)
 
-        # query = self.linears[0](query).view(batch_size, self.n_heads, seq_len, self.d_k)
-        # key = self.linears[1](key).view(batch_size, self.n_heads, seq_len, self.d_k)
-        # value = self.linears[2](value).view(batch_size, self.n_heads, seq_len, self.d_k)
-
         query = self.linears[0](query).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1,2)
         key = self.linears[1](key).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1,2)
         value = self.linears[2](value).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1,2)
