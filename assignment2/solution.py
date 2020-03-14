@@ -272,6 +272,7 @@ class GRU(nn.Module): # Implement a stacked GRU RNN
         self.init_memory_weights_uniform()
         self.init_out_layer_weights_uniform()
 
+
     def init_embedding_weights_uniform(self, init_range=0.1):
         # TODO ========================
         nn.init.uniform_(self.word_embeddings.weight, -init_range, init_range)
