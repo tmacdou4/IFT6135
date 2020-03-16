@@ -8,26 +8,26 @@ exp[2] = []
 exp[3] = []
 exp[4] = []
 
-exp[1].append(np.load("learning_curves_test.npy", allow_pickle=True)[()])
+# exp[1].append(np.load("learning_curves_test.npy", allow_pickle=True)[()])
 
-# exp[1].append(np.load("/RNN_SGD_model=RNN_optimizer=SGD_initial_lr=1.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_save_best_0/learning_curves_test.npy", allow_pickle=True)[()])
-# exp[1].append(np.load("/RNN_SGD_model=RNN_optimizer=SGD_initial_lr=1.0_batch_size=20_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_0/learning_curves_test.npy", allow_pickle=True)[()])
-# exp[1].append(np.load("/RNN_SGD_model=RNN_optimizer=SGD_initial_lr=10.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_0/learning_curves_test.npy", allow_pickle=True)[()])
-# exp[1].append(np.load("/RNN_ADAM_model=RNN_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_0/learning_curves_test.npy", allow_pickle=True)[()])
-# exp[1].append(np.load("/RNN_ADAM_model=RNN_optimizer=ADAM_initial_lr=0.0001_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_0/learning_curves_test.npy", allow_pickle=True)[()])
-#
-# exp[2].append(np.load("/GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.5_num_epochs=20_save_best_0/learning_curves_test.npy", allow_pickle=True)[()])
-# exp[2].append(np.load("/GRU_SGD_model=GRU_optimizer=SGD_initial_lr=10.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.5_num_epochs=20_0/learning_curves_test.npy", allow_pickle=True)[()])
-# exp[2].append(np.load("/GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=20_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.5_num_epochs=20_0/learning_curves_test.npy", allow_pickle=True)[()])
-#
-# exp[3].append(np.load("/GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=256_num_layers=2_dp_keep_prob=0.2_num_epochs=20_0/learning_curves_test.npy", allow_pickle=True)[()])
-# exp[3].append(np.load("/GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=2048_num_layers=2_dp_keep_prob=0.5_num_epochs=20_1/learning_curves_test.npy", allow_pickle=True)[()])
-# exp[3].append(np.load("/GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=512_num_layers=4_dp_keep_prob=0.5_num_epochs=20_0/learning_curves_test.npy", allow_pickle=True)[()])
-#
-# exp[4].append(np.load("/TRANSFORMER_ADAM_model=TRANSFORMER_optimizer=ADAM_initial_lr=0.0001_batch_size=128_seq_len=35_hidden_size=512_num_layers=6_dp_keep_prob=0.9_num_epochs=20_1/learning_curves_test.npy", allow_pickle=True)[()])
-# exp[4].append(np.load("/TRANSFORMER_ADAM_model=TRANSFORMER_optimizer=ADAM_initial_lr=0.0001_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.9_num_epochs=20_0/learning_curves_test.npy", allow_pickle=True)[()])
-# exp[4].append(np.load("/TRANSFORMER_ADAM_model=TRANSFORMER_optimizer=ADAM_initial_lr=0.0001_batch_size=128_seq_len=35_hidden_size=2048_num_layers=2_dp_keep_prob=0.6_num_epochs=20_1/learning_curves_test.npy", allow_pickle=True)[()])
-# exp[4].append(np.load("/TRANSFORMER_ADAM_model=TRANSFORMER_optimizer=ADAM_initial_lr=0.0001_batch_size=128_seq_len=35_hidden_size=1024_num_layers=6_dp_keep_prob=0.9_num_epochs=20_1/learning_curves_test.npy", allow_pickle=True)[()])
+exp[1].append(np.load("RNN_SGD_model=RNN_optimizer=SGD_initial_lr=1.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_save_best_0/learning_curves.npy", allow_pickle=True)[()])
+exp[1].append(np.load("RNN_SGD_model=RNN_optimizer=SGD_initial_lr=1.0_batch_size=20_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_0/learning_curves.npy", allow_pickle=True)[()])
+#exp[1].append(np.load("RNN_SGD_model=RNN_optimizer=SGD_initial_lr=10.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_1/learning_curves.npy", allow_pickle=True)[()])
+exp[1].append(np.load("RNN_ADAM_model=RNN_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_0/learning_curves.npy", allow_pickle=True)[()])
+exp[1].append(np.load("RNN_ADAM_model=RNN_optimizer=ADAM_initial_lr=0.0001_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_0/learning_curves.npy", allow_pickle=True)[()])
+
+exp[2].append(np.load("GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.5_num_epochs=20_save_best_0/learning_curves.npy", allow_pickle=True)[()])
+exp[2].append(np.load("GRU_SGD_model=GRU_optimizer=SGD_initial_lr=10.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.5_num_epochs=20_0/learning_curves.npy", allow_pickle=True)[()])
+exp[2].append(np.load("GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=20_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.5_num_epochs=20_0/learning_curves.npy", allow_pickle=True)[()])
+
+exp[3].append(np.load("GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=256_num_layers=2_dp_keep_prob=0.2_num_epochs=20_0/learning_curves.npy", allow_pickle=True)[()])
+exp[3].append(np.load("GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=2048_num_layers=2_dp_keep_prob=0.5_num_epochs=20_1/learning_curves.npy", allow_pickle=True)[()])
+exp[3].append(np.load("GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=512_num_layers=4_dp_keep_prob=0.5_num_epochs=20_0/learning_curves.npy", allow_pickle=True)[()])
+
+exp[4].append(np.load("TRANSFORMER_ADAM_model=TRANSFORMER_optimizer=ADAM_initial_lr=0.0001_batch_size=64_seq_len=35_hidden_size=512_num_layers=6_dp_keep_prob=0.9_num_epochs=20_0/learning_curves.npy", allow_pickle=True)[()])
+exp[4].append(np.load("TRANSFORMER_ADAM_model=TRANSFORMER_optimizer=ADAM_initial_lr=0.0001_batch_size=64_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.9_num_epochs=20_0/learning_curves.npy", allow_pickle=True)[()])
+exp[4].append(np.load("TRANSFORMER_ADAM_model=TRANSFORMER_optimizer=ADAM_initial_lr=0.0001_batch_size=64_seq_len=35_hidden_size=2048_num_layers=2_dp_keep_prob=0.6_num_epochs=20_0/learning_curves.npy", allow_pickle=True)[()])
+exp[4].append(np.load("TRANSFORMER_ADAM_model=TRANSFORMER_optimizer=ADAM_initial_lr=0.0001_batch_size=64_seq_len=35_hidden_size=1024_num_layers=6_dp_keep_prob=0.9_num_epochs=20_0/learning_curves.npy", allow_pickle=True)[()])
 
 labels = {}
 labels[1] = []
@@ -54,7 +54,7 @@ labels[4].append("Hidden Size: 512, Num Layers: 2")
 labels[4].append("Hidden Size: 2048, Num Layers: 2")
 labels[4].append("Hidden Size: 1024, Num Layers: 6")
 
-colours = [(1,0,0), (0.5,0.5,0), (0,1,0), (0,0.5,0.5), (0,0,1)]
+colours = [(1,0,0), (0,1,0), (0,0,1), (0,1,1), (1,0,1)]
 
 for id in range(1, 5):
     #epoch plot
