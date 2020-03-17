@@ -93,7 +93,7 @@ def repackage_hidden(h):
         return tuple(repackage_hidden(v) for v in h)
 
 model = RNN(emb_size=args.emb_size, hidden_size=args.hidden_size,
-                seq_len=args.seq_len, batch_size=args.batch_size,
+                seq_len=args.seq_len, batch_size=10,
                 vocab_size=10000, num_layers=args.num_layers,
                 dp_keep_prob=args.dp_keep_prob)
 
@@ -105,13 +105,13 @@ model.eval()
 #print(model.out_layer.weight.data)
 
 #also indices
-inputs = torch.from_numpy(np.arange(1,129,1).astype(np.int64))
+inputs = torch.from_numpy(np.random.randint(1,high=10001,size=10).astype(np.int64))
 
 hidden = model.init_hidden()
 model.zero_grad()
 hidden = repackage_hidden(hidden)
 samples = model.generate(inputs, hidden, 20) #returns indices
 
-print(samples)
+#print(samples)
 
 print(samples.transpose(0,1))
