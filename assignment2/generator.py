@@ -92,21 +92,23 @@ def repackage_hidden(h):
     else:
         return tuple(repackage_hidden(v) for v in h)
 
-model = RNN(emb_size=args.emb_size, hidden_size=args.hidden_size,
-                seq_len=args.seq_len, batch_size=10,
-                vocab_size=10000, num_layers=args.num_layers,
-                dp_keep_prob=args.dp_keep_prob)
+if args.model=="RNN":
+	model = RNN(emb_size=args.emb_size, hidden_size=args.hidden_size,
+                	seq_len=args.seq_len, batch_size=10,
+                	vocab_size=10000, num_layers=args.num_layers,
+                	dp_keep_prob=0.8)
+	model.load_state_dict(torch.load("RNN_SGD_model=RNN_optimizer=SGD_initial_lr=1.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_save_best_0/best_params.pt"))
 
+elif args.model=="GRU":
+	model = GRU(emb_size=args.emb_size, hidden_size=args.hidden_size,
+			seq_len=args.seq_len, batch_size=10,
+			vocab_size=10000, num_layers=args.num_layers,
+			dp_keep_prob=0.5)
+	model.load_state_dict(torch.load("GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.5_num_epochs=20_save_best_0/best_params.pt"))
 #print(model.out_layer.weight.data)
 
 #toy
 #model.load_state_dict(torch.load("RNN_SGD_model=RNN_optimizer=SGD_initial_lr=1.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=1_save_best_0/best_params.pt"))
-
-#Trained RNN
-model.load_state_dict(torch.load("RNN_SGD_model=RNN_optimizer=SGD_initial_lr=1.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_save_best_0/best_params.pt"))
-
-#Trained GRU
-#model.load_state_dict(torch.load("GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.5_num_epochs=20_save_best_0/best_params.pt"))
 
 model.eval()
 
@@ -115,10 +117,12 @@ model.eval()
 #also indices
 inputs = torch.from_numpy(np.random.randint(1,high=10001,size=10).astype(np.int64))
 
+print(inputs)
+
 hidden = model.init_hidden()
 model.zero_grad()
 hidden = repackage_hidden(hidden)
-samples = model.generate(inputs, hidden, 20) #returns indices
+samples = model.generate(inputs, hidden, 35) #returns indices
 
 #print(samples)
 

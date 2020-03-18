@@ -54,4 +54,4 @@ w2id, id2w = _build_vocab(filename)
 
 print(id2w[6])
 
-print(w2id["here"])
+print(w2id["company"])
