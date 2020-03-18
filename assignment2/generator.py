@@ -26,17 +26,17 @@ parser = argparse.ArgumentParser(description='PyTorch Penn Treebank Language Mod
 parser.add_argument('--data', type=str, default='data',
                     help='location of the data corpus. We suggest you change the default\
                     here, rather than passing as an argument, to avoid long file paths.')
-parser.add_argument('--model', type=str, default='GRU',
+parser.add_argument('--model', type=str, default='RNN',
                     help='type of recurrent net (RNN, GRU, TRANSFORMER)')
-parser.add_argument('--optimizer', type=str, default='SGD_LR_SCHEDULE',
+parser.add_argument('--optimizer', type=str, default='SGD',
                     help='optimization algo to use; SGD, SGD_LR_SCHEDULE, ADAM')
 parser.add_argument('--seq_len', type=int, default=35,
                     help='number of timesteps over which BPTT is performed')
-parser.add_argument('--batch_size', type=int, default=20,
+parser.add_argument('--batch_size', type=int, default=10,
                     help='size of one minibatch')
-parser.add_argument('--initial_lr', type=float, default=20.0,
+parser.add_argument('--initial_lr', type=float, default=1.0,
                     help='initial learning rate')
-parser.add_argument('--hidden_size', type=int, default=200,
+parser.add_argument('--hidden_size', type=int, default=512,
                     help='size of hidden layers. IMPORTANT: for the transformer\
                     this must be a multiple of 16.')
 parser.add_argument('--save_best', action='store_true',
@@ -49,7 +49,7 @@ parser.add_argument('--emb_size', type=int, default=200,
                     help='size of word embeddings')
 parser.add_argument('--num_epochs', type=int, default=40,
                     help='number of epochs to stop after')
-parser.add_argument('--dp_keep_prob', type=float, default=0.35,
+parser.add_argument('--dp_keep_prob', type=float, default=0.8,
                     help='dropout *keep* probability. drop_prob = 1-dp_keep_prob \
                     (dp_keep_prob=1 means no dropout)')
 
@@ -99,7 +99,15 @@ model = RNN(emb_size=args.emb_size, hidden_size=args.hidden_size,
 
 #print(model.out_layer.weight.data)
 
-model.load_state_dict(torch.load("RNN_SGD_model=RNN_optimizer=SGD_initial_lr=1.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=1_save_best_0/best_params.pt"))
+#toy
+#model.load_state_dict(torch.load("RNN_SGD_model=RNN_optimizer=SGD_initial_lr=1.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=1_save_best_0/best_params.pt"))
+
+#Trained RNN
+model.load_state_dict(torch.load("RNN_SGD_model=RNN_optimizer=SGD_initial_lr=1.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_save_best_0"))
+
+#Trained GRU
+#model.load_state_dict(torch.load("GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.5_num_epochs=20_save_best_0"))
+
 model.eval()
 
 #print(model.out_layer.weight.data)
@@ -114,4 +122,31 @@ samples = model.generate(inputs, hidden, 20) #returns indices
 
 #print(samples)
 
-print(samples.transpose(0,1))
+samples = samples.transpose(0,1)
+
+filename = "data/ptb.train.txt"
+
+def _read_words(filename):
+    with open(filename, "r") as f:
+      return f.read().replace("\n", "<eos>").split()
+
+def _build_vocab(filename):
+    data = _read_words(filename)
+
+    counter = collections.Counter(data)
+    count_pairs = sorted(counter.items(), key=lambda x: (-x[1], x[0]))
+
+    words, _ = list(zip(*count_pairs))
+    word_to_id = dict(zip(words, range(len(words))))
+    id_to_word = dict((v, k) for k, v in word_to_id.items())
+
+    return word_to_id, id_to_word
+
+w2id, id2w = _build_vocab(filename)
+
+output = []
+for i in range(samples.size(0)):
+    output.append([])
+    for j in range(samples.size(1)):
+        output[i].append(id2w[samples[i][j].item()])
+    print(output[i])
