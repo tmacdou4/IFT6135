@@ -117,14 +117,10 @@ model.eval()
 #also indices
 inputs = torch.from_numpy(np.random.randint(1,high=10001,size=10).astype(np.int64))
 
-print(inputs)
-
 hidden = model.init_hidden()
 model.zero_grad()
 hidden = repackage_hidden(hidden)
 samples = model.generate(inputs, hidden, 35) #returns indices
-
-#print(samples)
 
 samples = samples.transpose(0,1)
 
@@ -150,7 +146,7 @@ w2id, id2w = _build_vocab(filename)
 
 output = []
 for i in range(samples.size(0)):
-    output.append([])
+    output.append("")
     for j in range(samples.size(1)):
-        output[i].append(id2w[samples[i][j].item()])
+        output[i] += (str(id2w[samples[i][j].item()]) + " ")
     print(output[i])

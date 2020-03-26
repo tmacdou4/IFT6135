@@ -80,7 +80,7 @@ torch.autograd.set_detect_anomaly(True)
 
 # NOTE ==============================================
 # This is where your models are imported
-from solution import RNN, GRU
+from solution_gradients import RNN, GRU
 from solution import make_model as TRANSFORMER
 
 ##############################################################################
@@ -101,11 +101,11 @@ parser.add_argument('--optimizer', type=str, default='SGD_LR_SCHEDULE',
                     help='optimization algo to use; SGD, SGD_LR_SCHEDULE, ADAM')
 parser.add_argument('--seq_len', type=int, default=35,
                     help='number of timesteps over which BPTT is performed')
-parser.add_argument('--batch_size', type=int, default=20,
+parser.add_argument('--batch_size', type=int, default=128,
                     help='size of one minibatch')
-parser.add_argument('--initial_lr', type=float, default=20.0,
+parser.add_argument('--initial_lr', type=float, default=1.0,
                     help='initial learning rate')
-parser.add_argument('--hidden_size', type=int, default=200,
+parser.add_argument('--hidden_size', type=int, default=512,
                     help='size of hidden layers. IMPORTANT: for the transformer\
                     this must be a multiple of 16.')
 parser.add_argument('--save_best', action='store_true',
@@ -287,30 +287,37 @@ print('  vocabulary size: {}'.format(vocab_size))
 # MODEL SETUP
 #
 ###############################################################################
+###############################################################################
 
 # NOTE ==============================================
 # This is where your model code will be called.
-model = RNN(emb_size=args.emb_size, hidden_size=args.hidden_size,
-                seq_len=args.seq_len, batch_size=args.batch_size,
-                vocab_size=10000, num_layers=args.num_layers,
-                dp_keep_prob=args.dp_keep_prob)
 
-model.load_state_dict(torch.load(experiment_path + "/best_params.pt"))
+if (args.model=="RNN"):
+	model = RNN(emb_size=args.emb_size, hidden_size=args.hidden_size,
+                	seq_len=args.seq_len, batch_size=128,
+                	vocab_size=10000, num_layers=args.num_layers,
+                	dp_keep_prob=0.8)
+	model.load_state_dict(torch.load("RNN_SGD_model=RNN_optimizer=SGD_initial_lr=1.0_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.8_num_epochs=20_save_best_0/best_params.pt"))
+
+elif (args.model=="GRU"):
+    model = GRU(emb_size=args.emb_size, hidden_size=args.hidden_size, seq_len=args.seq_len, batch_size=128, vocab_size=10000, num_layers=args.num_layers, dp_keep_prob=0.5)
+    model.load_state_dict(torch.load("GRU_ADAM_model=GRU_optimizer=ADAM_initial_lr=0.001_batch_size=128_seq_len=35_hidden_size=512_num_layers=2_dp_keep_prob=0.5_num_epochs=20_save_best_0/best_params.pt"))
+
 model.eval()
 
 model = model.to(device)
 
 # LOSS FUNCTION
-loss_fn = nn.CrossEntropyLoss()
-if args.optimizer == 'ADAM':
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.initial_lr)
+#loss_fn = nn.CrossEntropyLoss()
+#if args.optimizer == 'ADAM':
+#   optimizer = torch.optim.Adam(model.parameters(), lr=args.initial_lr)
 
 # LEARNING RATE
-lr = args.initial_lr
+#lr = args.initial_lr
 # These variables are for learning rate schedule (which you are not asked to use)
 # see SGD_LR_SCHEDULE in the main loop
-lr_decay_base = 1 / 1.15
-m_flat_lr = 14.0 # we will not touch lr for the first m_flat_lr epochs
+#lr_decay_base = 1 / 1.15
+#m_flat_lr = 14.0 # we will not touch lr for the first m_flat_lr epochs
 
 ###############################################################################
 #
@@ -358,7 +365,7 @@ def run_epoch(model, data, is_train=False, lr=1.0):
         inputs = torch.from_numpy(x.astype(np.int64)).transpose(0, 1).contiguous().to(device)#.cuda()
         model.zero_grad()
         hidden = repackage_hidden(hidden)
-        outputs, hidden = model(inputs, hidden)
+        outputs, hidden, saved_hiddens = model(inputs, hidden)
 
         targets = torch.from_numpy(y.astype(np.int64)).transpose(0, 1).contiguous().to(device)#.cuda()
 
@@ -373,12 +380,27 @@ def run_epoch(model, data, is_train=False, lr=1.0):
         #
 
         #Only need to run loss function on last time step
-        loss_at_T = loss_fn(outputs.contiguous().view(-1, model.vocab_size), tt)
+
+        loss_fn = nn.CrossEntropyLoss()
+        #loss = loss_fn(outputs.contiguous().view(-1, model.vocab_size), tt)
+
+        loss = []
+        for i in range(outputs.size(0)):
+            loss.append(loss_fn(outputs[i].contiguous().view(-1, model.vocab_size), targets[i]))
+
+        #print(loss_2[-1])
+
+        #print(saved_hiddens[-1])
+
+        #print(hidden)
+
+        #print(torch.autograd.grad(loss_2[-1], saved_hiddens[-1], retain_graph=True, allow_unused=True)[0])
 
         loss_grad_norms = []
+        for i in range(outputs.size(0)):
+            loss_grad_norms.append(torch.norm(torch.autograd.grad(loss[-1], saved_hiddens[i], retain_graph=True)[0]))
 
-        for i in range(len(hidden)):
-            loss_grad_norms.append(torch.autograd.grad(loss, hidden[i], retain_graph=True))
+        break
 
     return loss_grad_norms
 
@@ -399,7 +421,18 @@ best_val_so_far = np.inf
 times = []
 
 loss_grad_norms = run_epoch(model, train_data)
+grad_norms = np.squeeze(np.array([x.cpu().data.numpy() for x in loss_grad_norms]))
 
-# SAVE LEARNING CURVES
-print(loss_grad_norms)
+min = np.min(grad_norms)
+max = np.max(grad_norms)
+
+grad_norms = (grad_norms - min)/(max - min)
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.arange(1,36,1)
+
+plt.plot(x,grad_norms)
+plt.show()
 
