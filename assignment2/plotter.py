@@ -49,17 +49,17 @@ labels[1].append("Opt: ADAM, LR: 0.001, Batch Size: 128")
 labels[1].append("Opt: ADAM, LR: 0.0001, Batch Size: 128")
 
 labels[2].append("Opt: ADAM, LR: 0.001, Batch Size: 128")
-labels[2].append("Opt: SGD, LR: 10.0, Batch Size: 20")
+labels[2].append("Opt: SGD, LR: 10.0, Batch Size: 128")
 labels[2].append("Opt: ADAM, LR: 0.001, Batch Size: 20")
 
-labels[3].append("Hidden Size: 256, Num Layers: 2")
-labels[3].append("Hidden Size: 2048, Num Layers: 2")
-labels[3].append("Hidden Size: 512, Num Layers: 4")
+labels[3].append("Hidden Size: 256, Num Layers: 2, Dropout keep prob: 0.2")
+labels[3].append("Hidden Size: 2048, Num Layers: 2, Dropout keep prob: 0.5")
+labels[3].append("Hidden Size: 512, Num Layers: 4, Dropout keep prob: 0.5")
 
-labels[4].append("Hidden Size: 512, Num Layers: 6")
-labels[4].append("Hidden Size: 512, Num Layers: 2")
-labels[4].append("Hidden Size: 2048, Num Layers: 2")
-labels[4].append("Hidden Size: 1024, Num Layers: 6")
+labels[4].append("Hidden Size: 512, Num Layers: 6, Keep prob: 0.9")
+labels[4].append("Hidden Size: 512, Num Layers: 2, Keep prob: 0.9")
+labels[4].append("Hidden Size: 2048, Num Layers: 2, Keep prob: 0.6")
+labels[4].append("Hidden Size: 1024, Num Layers: 6, Keep prob: 0.9")
 
 colours = [(1,0,0), (0,1,0), (0,0,1), (0,1,1), (1,0,1)]
 
@@ -103,12 +103,19 @@ for id in range(1, 5):
     if id == 1:
         #remove the colour that the removed datapoints would be, so that they match
         new_colours = [(1,0,0), (0,1,0), (0,1,1), (1,0,1)]
+
+        new_labels = []
+        new_labels.append("Opt: SGD, LR: 1.0, Batch Size: 128")
+        new_labels.append("Opt: SGD, LR: 1.0, Batch Size: 20")
+        new_labels.append("Opt: ADAM, LR: 0.001, Batch Size: 128")
+        new_labels.append("Opt: ADAM, LR: 0.0001, Batch Size: 128")
+
         del exp[1][2]
         #epoch plot
         fig, ax = plt.subplots(1, 1)
         for p in range(len(exp[id])):
-            plt.plot(epochs, exp[id][p]["train_ppls"], label=labels[id][p]+", Train", marker="o", color=new_colours[p])
-            plt.plot(epochs, exp[id][p]["val_ppls"], label=labels[id][p]+", Valid.", marker="^", color=new_colours[p])
+            plt.plot(epochs, exp[id][p]["train_ppls"], label=new_labels[p]+", Train", marker="o", color=new_colours[p])
+            plt.plot(epochs, exp[id][p]["val_ppls"], label=new_labels[p]+", Valid.", marker="^", color=new_colours[p])
         plt.legend(prop={'size': 9})    
         plt.ylabel("Model Perplexity")
         plt.xlabel("Epoch")
@@ -121,8 +128,8 @@ for id in range(1, 5):
             times.append(exp[id][p]["times"][0])
             for i in range(1, len(exp[id][p]["times"])):
                 times.append(exp[id][p]["times"][i] + times[i-1])
-            plt.plot(times, exp[id][p]["train_ppls"], label=labels[id][p]+", Train", marker="o", color=new_colours[p])
-            plt.plot(times, exp[id][p]["val_ppls"], label=labels[id][p]+", Valid.", marker="^", color=new_colours[p])
+            plt.plot(times, exp[id][p]["train_ppls"], label=new_labels[p]+", Train", marker="o", color=new_colours[p])
+            plt.plot(times, exp[id][p]["val_ppls"], label=new_labels[p]+", Valid.", marker="^", color=new_colours[p])
         plt.legend(prop={'size': 9})
         plt.ylabel("Model Perplexity")
         plt.xlabel("Total Elapsed Time in Seconds")
