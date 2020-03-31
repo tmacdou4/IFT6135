@@ -400,7 +400,7 @@ def run_epoch(model, data, is_train=False, lr=1.0):
 
         loss_grad_norms = []
         for i in range(outputs.size(0)):
-            loss_grad_norms.append(torch.mean(torch.norm(torch.autograd.grad(loss[-1], saved_hiddens[i], retain_graph=True)[0], dim=(0, 2))))
+            loss_grad_norms.append(torch.norm(torch.norm(torch.autograd.grad(loss[-1], saved_hiddens[i], retain_graph=True)[0], dim=(0, 2))))
 
         break
 

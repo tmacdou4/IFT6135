@@ -115,7 +115,7 @@ model.eval()
 #print(model.out_layer.weight.data)
 
 #also indices
-inputs = torch.from_numpy(np.random.randint(1,high=10001,size=10).astype(np.int64))
+inputs = torch.from_numpy(np.random.randint(1,high=1000,size=10).astype(np.int64))
 
 hidden = model.init_hidden()
 model.zero_grad()
@@ -149,4 +149,4 @@ for i in range(samples.size(0)):
     output.append("")
     for j in range(samples.size(1)):
         output[i] += (str(id2w[samples[i][j].item()]) + " ")
-    print(output[i])
+    print(output[i]+"\\\\")
