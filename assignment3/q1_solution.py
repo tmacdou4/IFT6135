@@ -21,9 +21,8 @@ def log_likelihood_bernoulli(mu, target):
     batch_size = mu.size(0)
     mu = mu.view(batch_size, -1)
     target = target.view(batch_size, -1)
-
-    # log_likelihood_bernoulli
-    return
+    out = (target * torch.log(mu) + (1-target) * torch.log(1-mu)).sum(1)
+    return out
 
 
 def log_likelihood_normal(mu, logvar, z):
@@ -43,8 +42,12 @@ def log_likelihood_normal(mu, logvar, z):
     logvar = logvar.view(batch_size, -1)
     z = z.view(batch_size, -1)
 
+    const = -(1/2)*np.log(2*math.pi)
+    p1 = -(1/2)*logvar
+    p2 = -(1/2)*(((z - mu) ** 2)/torch.exp(logvar))
+
     # log normal
-    return
+    return (const + p1 + p2).sum(1)
 
 
 def log_mean_exp(y):
@@ -60,8 +63,16 @@ def log_mean_exp(y):
     batch_size = y.size(0)
     sample_size = y.size(1)
 
+    max_y = torch.max(y, 1).values.view(batch_size,1)
+
+    a = y - max_y
+
+    b = torch.exp(a)
+
+    c = b.mean(1).view(batch_size,1)
+
     # log_mean_exp
-    return
+    return (torch.log(c) + max_y).view(batch_size,)
 
 
 def kl_gaussian_gaussian_analytic(mu_q, logvar_q, mu_p, logvar_p):
