@@ -7,6 +7,62 @@ from q3_sampler import svhn_sampler
 from q3_model import Critic, Generator
 from torch import optim
 
+def lp_reg(x, y, critic):
+    """
+    COMPLETE ME. DONT MODIFY THE PARAMETERS OF THE FUNCTION. Otherwise, tests might fail.
+
+    *** The notation used for the parameters follow the one from Petzka et al: https://arxiv.org/pdf/1709.08894.pdf
+    In other word, x are samples from the distribution mu and y are samples from the distribution nu. The critic is the
+    equivalent of f in the paper. Also consider that the norm used is the L2 norm. This is important to consider,
+    because we make the assumption that your implementation follows this notation when testing your function. ***
+
+    :param x: (FloatTensor) - shape: (batchsize x 2) - Samples from a distribution P.
+    :param y: (FloatTensor) - shape: (batchsize x 2) - Samples from a distribution Q.
+    :param critic: (Module) - torch module that you want to regularize.
+    :return: (FloatTensor) - shape: (1,) - Lipschitz penalty
+    """
+
+    eps = torch.rand(x.size(0)).unsqueeze(1)
+    x_hat = eps*x+(1-eps)*y
+    x_hat.requires_grad = True
+
+    f_x_hat = critic(x_hat)
+
+    grad = torch.autograd.grad(f_x_hat, x_hat, grad_outputs=torch.ones_like(f_x_hat), retain_graph=True, create_graph=True, only_inputs=True)[0]
+
+    norm = torch.norm(grad, 2, dim=-1)
+
+    relu = torch.nn.functional.relu(norm-1)
+
+    out = relu ** 2
+
+    return out.mean()
+
+def vf_wasserstein_distance(p, q, critic):
+    """
+    COMPLETE ME. DONT MODIFY THE PARAMETERS OF THE FUNCTION. Otherwise, tests might fail.
+
+    *** The notation used for the parameters follow the one from Petzka et al: https://arxiv.org/pdf/1709.08894.pdf
+    In other word, x are samples from the distribution mu and y are samples from the distribution nu. The critic is the
+    equivalent of f in the paper. This is important to consider, because we make the assuption that your implementation
+    follows this notation when testing your function. ***
+
+    :param p: (FloatTensor) - shape: (batchsize x 2) - Samples from a distribution p.
+    :param q: (FloatTensor) - shape: (batchsize x 2) - Samples from a distribution q.
+    :param critic: (Module) - torch module used to compute the Wasserstein distance
+    :return: (FloatTensor) - shape: (1,) - Estimate of the Wasserstein distance
+    """
+    critic_x = critic(p)
+    critic_y = critic(q)
+
+    E_P = (critic_x).mean()
+    E_Q = (critic_y).mean()
+
+    out = E_P - E_Q
+
+    return out
+
+
 
 if __name__ == '__main__':
     # Example of usage of the code provided and recommended hyper parameters for training GANs.

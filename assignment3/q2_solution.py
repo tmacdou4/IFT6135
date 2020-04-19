@@ -21,7 +21,22 @@ def lp_reg(x, y, critic):
     :param critic: (Module) - torch module that you want to regularize.
     :return: (FloatTensor) - shape: (1,) - Lipschitz penalty
     """
-    pass
+
+    eps = torch.rand(x.size(0)).unsqueeze(1)
+    x_hat = eps*x+(1-eps)*y
+    x_hat.requires_grad = True
+
+    f_x_hat = critic(x_hat)
+
+    grad = torch.autograd.grad(f_x_hat, x_hat, grad_outputs=torch.ones_like(f_x_hat), retain_graph=True, create_graph=True, only_inputs=True)[0]
+
+    norm = torch.norm(grad, 2, dim=-1)
+
+    relu = torch.nn.functional.relu(norm-1)
+
+    out = relu ** 2
+
+    return out.mean()
 
 
 def vf_wasserstein_distance(p, q, critic):
@@ -38,7 +53,15 @@ def vf_wasserstein_distance(p, q, critic):
     :param critic: (Module) - torch module used to compute the Wasserstein distance
     :return: (FloatTensor) - shape: (1,) - Estimate of the Wasserstein distance
     """
-    pass
+    critic_x = critic(p)
+    critic_y = critic(q)
+
+    E_P = (critic_x).mean()
+    E_Q = (critic_y).mean()
+
+    out = E_P - E_Q
+
+    return out
 
 
 def vf_squared_hellinger(x, y, critic):
@@ -55,7 +78,14 @@ def vf_squared_hellinger(x, y, critic):
     :param critic: (Module) - torch module used to compute the Peason Chi square.
     :return: (FloatTensor) - shape: (1,) - Estimate of the Squared Hellinger
     """
-    pass
+    critic_x = 1 - torch.exp(-critic(x))
+    critic_y = 1 - torch.exp(-critic(y))
+
+    E_P = (critic_x).mean()
+    E_Q = (critic_y / (1-critic_y)).mean()
+
+    out = E_P - E_Q
+    return out
 
 
 if __name__ == '__main__':

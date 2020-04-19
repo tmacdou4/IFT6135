@@ -95,7 +95,17 @@ def kl_gaussian_gaussian_analytic(mu_q, logvar_q, mu_p, logvar_p):
     logvar_p = logvar_p.view(batch_size, -1)
 
     # kld
-    return
+    a = (1/2)*logvar_p
+    b = a - (1/2)*logvar_q
+    c = (mu_q - mu_p)
+    d = c ** 2
+    e = torch.exp(logvar_q) + d
+    f = e/(2*torch.exp(logvar_p))
+    g = b + f - (1/2)
+    h = g.sum(1)
+
+
+    return h
 
 
 def kl_gaussian_gaussian_mc(mu_q, logvar_q, mu_p, logvar_p, num_samples=1):
@@ -119,5 +129,19 @@ def kl_gaussian_gaussian_mc(mu_q, logvar_q, mu_p, logvar_p, num_samples=1):
     mu_p = mu_p.view(batch_size, -1).unsqueeze(1).expand(batch_size, num_samples, input_size)
     logvar_p = logvar_p.view(batch_size, -1).unsqueeze(1).expand(batch_size, num_samples, input_size)
 
+    #sample from q
+    samples = torch.normal(mu_q, (torch.exp(logvar_q) ** (1/2)))
+
+    q = (1/torch.sqrt(2*math.pi*torch.exp(logvar_q)))*torch.exp((-1/2)*((samples-mu_q) ** 2)/torch.exp(logvar_q))
+    p = (1/torch.sqrt(2*math.pi*torch.exp(logvar_p)))*torch.exp((-1/2)*((samples-mu_p) ** 2)/torch.exp(logvar_p))
+
+    log_q = torch.log(q)
+    log_p = torch.log(p)
+
+    log_q = log_q.sum(2)
+    log_p = log_p.sum(2)
+
     # kld
-    return
+    out = (log_q - log_p).mean(1)
+
+    return out

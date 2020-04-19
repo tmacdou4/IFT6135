@@ -12,6 +12,10 @@ import torch
 #
 # print(log_likelihood_normal(x, z, y))
 torch.manual_seed(5)
-y = torch.rand(3,4)
+a = torch.Tensor([[10,2,300],[15,300,5]])
+b = torch.Tensor([[5,0.2,5],[5,0.2,5]])
 
-print(log_mean_exp(y))
+c = torch.Tensor([[9,2.5,295],[14,302,5.5]])
+d = torch.Tensor([[5,0.2,5],[5,0.2,5]])
+
+print(kl_gaussian_gaussian_mc(a, b, c, d))
